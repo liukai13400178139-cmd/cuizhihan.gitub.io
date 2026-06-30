@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>校园安全应急管理系统 - 登录</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
+    
+    .login-page { 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      min-height: 100vh; 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+    }
+    
+    .login-box { 
+      background: white; 
+      padding: 40px; 
+      border-radius: 16px; 
+      box-shadow: 0 20px 60px rgba(0,0,0,0.1); 
+      width: 100%; 
+      max-width: 420px; 
+      animation: fadeIn 0.5s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .login-box .logo { text-align: center; font-size: 64px; margin-bottom: 20px; }
+    .login-box h2 { text-align: center; color: #333; margin-bottom: 8px; font-size: 24px; }
+    .login-box p { text-align: center; color: #666; margin-bottom: 30px; }
+    
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 8px; color: #555; font-weight: 500; }
+    .form-group input { 
+      width: 100%; 
+      padding: 14px 16px; 
+      border: 1px solid #ddd; 
+      border-radius: 8px; 
+      font-size: 15px; 
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .form-group input:focus { 
+      outline: none; 
+      border-color: #667eea; 
+      box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+    }
+    
+    .btn { 
+      padding: 14px 24px; 
+      border: none; 
+      border-radius: 8px; 
+      font-size: 15px; 
+      cursor: pointer; 
+      transition: all 0.3s; 
+      width: 100%;
+    }
+    
+    .btn-primary { 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+      color: white; 
+      font-weight: 600;
+    }
+    
+    .btn-primary:hover { 
+      transform: translateY(-1px); 
+      box-shadow: 0 4px 12px rgba(102,126,234,0.4); 
+    }
+    
+    .btn-primary:active { transform: translateY(0); }
+    
+    #login-msg { 
+      color: #ef4444; 
+      text-align: center; 
+      margin-top: 15px; 
+      font-size: 14px; 
+      min-height: 20px;
+    }
+    
+    .footer-text {
+      text-align: center;
+      color: #999;
+      font-size: 13px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-box">
+      <div class="logo">🛡️</div>
+      <h2>校园安全应急管理系统</h2>
+      <p>校园保卫处专用</p>
+      <div class="form-group">
+        <label>用户名</label>
+        <input type="text" id="login-username" placeholder="请输入用户名" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <input type="password" id="login-password" placeholder="请输入密码" autocomplete="current-password">
+      </div>
+      <button class="btn btn-primary" onclick="handleLogin()">登录系统</button>
+      <div id="login-msg"></div>
+      <div class="footer-text">© 2024 校园安全应急管理系统</div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE_URL = '/api';
+    
+    function getToken() { return localStorage.getItem('token'); }
+    function setToken(token) { localStorage.setItem('token', token); }
+    function setUserInfo(u) { localStorage.setItem('user', JSON.stringify(u)); }
+    
+    async function apiPost(url, data) {
+      const response = await fetch(`${API_BASE_URL}${url}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      return await response.json();
+    }
+    
+    async function handleLogin() {
+      const username = document.getElementById('login-username').value.trim();
+      const password = document.getElementById('login-password').value.trim();
+      
+      if (!username || !password) { 
+        showLoginMsg('请输入用户名和密码'); 
+        return; 
+      }
+      
+      showLoginMsg('');
+      
+      const result = await apiPost('/auth/login', { username, password });
+      
+      if (result.success) {
+        setToken(result.token);
+        setUserInfo(result.user);
+        window.location.href = 'index.html';
+      } else {
+        showLoginMsg(result.error || '登录失败');
+      }
+    }
+    
+    function showLoginMsg(msg) { 
+      document.getElementById('login-msg').textContent = msg; 
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      if (getToken()) {
+        window.location.href = 'index.html';
+      }
+      
+      document.getElementById('login-password').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          handleLogin();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

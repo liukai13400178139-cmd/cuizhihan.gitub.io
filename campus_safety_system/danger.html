@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>校园安全系统 - 隐患管理</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --primary: #4facfe;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --bg-dark: #0a0e17;
+      --bg-card: rgba(255,255,255,0.05);
+      --border-color: rgba(255,255,255,0.1);
+      --text-primary: #fff;
+      --text-secondary: rgba(255,255,255,0.6);
+      --text-muted: rgba(255,255,255,0.4);
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    .sidebar {
+      position: fixed;
+      left: 0; top: 0; bottom: 0;
+      width: 260px;
+      background: rgba(20, 28, 47, 0.95);
+      backdrop-filter: blur(20px);
+      border-right: 1px solid var(--border-color);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 0;
+      transition: transform 0.3s;
+    }
+    
+    .sidebar-header {
+      padding: 0 20px 25px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 20px;
+    }
+    
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon {
+      width: 42px; height: 42px;
+      background: linear-gradient(135deg, var(--primary), #2563eb);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+    .logo-text h1 { font-size: 18px; font-weight: 600; }
+    .logo-text p { font-size: 12px; color: var(--text-muted); }
+    
+    .nav-menu { flex: 1; padding: 0 15px; overflow-y: auto; }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px; border-radius: 12px; margin-bottom: 6px;
+      cursor: pointer; transition: all 0.3s; color: var(--text-secondary);
+      text-decoration: none;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+    .nav-item.active { background: rgba(79,172,254,0.15); color: var(--primary); }
+    .nav-icon { font-size: 20px; }
+    .nav-text { font-size: 14px; font-weight: 500; }
+    
+    .sidebar-footer {
+      padding: 15px; border-top: 1px solid var(--border-color);
+    }
+    .user-info {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px; background: rgba(255,255,255,0.03); border-radius: 12px;
+    }
+    .user-avatar {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .user-details span { display: block; font-size: 14px; font-weight: 500; }
+    .user-details small { font-size: 12px; color: var(--text-muted); }
+    
+    .main-content { margin-left: 260px; padding: 25px; min-height: 100vh; }
+    
+    .header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 25px; flex-wrap: wrap; gap: 15px;
+    }
+    
+    .header-left h2 { font-size: 24px; font-weight: 600; }
+    .header-left p { font-size: 13px; color: var(--text-muted); margin-top: 5px; }
+    
+    .header-right { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+    
+    .search-box { position: relative; }
+    .search-box input {
+      width: 280px; padding: 12px 40px 12px 16px;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border-color);
+      border-radius: 10px; color: var(--text-primary); font-size: 14px;
+      outline: none; transition: all 0.3s;
+    }
+    .search-box input:focus { border-color: var(--primary); }
+    .search-box::before { content: '🔍'; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; }
+    
+    .add-btn {
+      padding: 12px 24px;
+      background: linear-gradient(135deg, var(--primary), #2563eb);
+      color: #fff; border: none; border-radius: 10px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      transition: all 0.3s; box-shadow: 0 4px 15px rgba(79,172,254,0.3);
+    }
+    .add-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(79,172,254,0.4); }
+    
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 15px; margin-bottom: 25px;
+    }
+    
+    .stat-card {
+      background: var(--bg-card); border-radius: 14px; padding: 20px;
+      border: 1px solid var(--border-color); transition: all 0.3s;
+      position: relative; overflow: hidden;
+    }
+    .stat-card:hover { transform: translateY(-2px); }
+    .stat-card::before {
+      content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+    }
+    .stat-card.high::before { background: var(--danger); }
+    .stat-card.medium::before { background: var(--warning); }
+    .stat-card.low::before { background: var(--primary); }
+    .stat-card.resolved::before { background: var(--success); }
+    
+    .stat-icon { font-size: 28px; margin-bottom: 10px; }
+    .stat-value { font-size: 28px; font-weight: 700; margin-bottom: 5px; }
+    .stat-label { font-size: 13px; color: var(--text-secondary); }
+    
+    .filter-bar {
+      display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px;
+    }
+    
+    .filter-btn {
+      padding: 10px 20px; background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border-color); border-radius: 20px;
+      color: var(--text-secondary); font-size: 13px; cursor: pointer;
+      transition: all 0.3s;
+    }
+    .filter-btn:hover, .filter-btn.active {
+      background: rgba(79,172,254,0.15); color: var(--primary);
+      border-color: var(--primary);
+    }
+    
+    .table-container {
+      background: var(--bg-card); border-radius: 16px;
+      border: 1px solid var(--border-color); overflow: hidden;
+    }
+    
+    .table-header {
+      padding: 20px; border-bottom: 1px solid var(--border-color);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    
+    .table-header h3 { font-size: 16px; font-weight: 600; }
+    
+    table { width: 100%; border-collapse: collapse; }
+    
+    th {
+      padding: 16px 20px; text-align: left; font-size: 13px;
+      font-weight: 600; color: var(--text-muted); text-transform: uppercase;
+      letter-spacing: 0.5px; border-bottom: 1px solid var(--border-color);
+    }
+    
+    td {
+      padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 14px; color: var(--text-secondary);
+    }
+    
+    tr:hover { background: rgba(255,255,255,0.03); }
+    
+    .priority-badge {
+      padding: 6px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;
+    }
+    .priority-badge.high { background: rgba(239,68,68,0.15); color: var(--danger); }
+    .priority-badge.medium { background: rgba(245,158,11,0.15); color: var(--warning); }
+    .priority-badge.low { background: rgba(79,172,254,0.15); color: var(--primary); }
+    
+    .status-badge {
+      padding: 6px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;
+    }
+    .status-badge.pending { background: rgba(239,68,68,0.15); color: var(--danger); }
+    .status-badge.processing { background: rgba(245,158,11,0.15); color: var(--warning); }
+    .status-badge.resolved { background: rgba(34,197,94,0.15); color: var(--success); }
+    
+    .action-btn {
+      padding: 8px 16px; border-radius: 8px; font-size: 12px;
+      font-weight: 500; cursor: pointer; transition: all 0.3s;
+      border: none; margin-right: 8px;
+    }
+    .action-btn.detail {
+      background: rgba(79,172,254,0.15); color: var(--primary);
+    }
+    .action-btn.detail:hover { background: rgba(79,172,254,0.25); }
+    .action-btn.resolve {
+      background: rgba(34,197,94,0.15); color: var(--success);
+    }
+    .action-btn.resolve:hover { background: rgba(34,197,94,0.25); }
+    
+    .modal {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 1000;
+      align-items: center; justify-content: center; padding: 20px;
+      animation: fadeIn 0.3s;
+    }
+    
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    
+    .modal-content {
+      background: rgba(20,28,47,0.95); border-radius: 20px; padding: 30px;
+      max-width: 500px; width: 100%; border: 1px solid var(--border-color);
+      animation: slideUp 0.3s;
+    }
+    
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 25px;
+    }
+    
+    .modal-header h3 { font-size: 20px; font-weight: 600; }
+    
+    .close-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 1px solid var(--border-color); background: rgba(255,255,255,0.05);
+      color: var(--text-secondary); font-size: 18px; cursor: pointer;
+      transition: all 0.3s;
+    }
+    .close-btn:hover { background: rgba(239,68,68,0.15); color: var(--danger); border-color: var(--danger); }
+    
+    .form-group { margin-bottom: 20px; }
+    .form-group label {
+      display: block; font-size: 13px; font-weight: 500;
+      color: var(--text-secondary); margin-bottom: 10px;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 14px; background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border-color); border-radius: 10px;
+      color: var(--text-primary); font-size: 14px; outline: none;
+      transition: all 0.3s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: var(--primary);
+    }
+    .form-group textarea { resize: vertical; min-height: 100px; }
+    
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    
+    .modal-actions {
+      display: flex; gap: 12px; margin-top: 25px;
+    }
+    
+    .modal-btn {
+      flex: 1; padding: 14px; border-radius: 12px; font-size: 14px;
+      font-weight: 600; cursor: pointer; transition: all 0.3s; border: none;
+    }
+    .modal-btn.primary { background: var(--primary); color: #fff; }
+    .modal-btn.primary:hover { background: #3b82f6; }
+    .modal-btn.secondary { background: rgba(255,255,255,0.05); color: var(--text-secondary); border: 1px solid var(--border-color); }
+    .modal-btn.secondary:hover { background: rgba(255,255,255,0.08); }
+    
+    .mobile-menu-btn {
+      display: none; padding: 10px; background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border-color); border-radius: 8px;
+      color: var(--text-primary); font-size: 20px; cursor: pointer;
+    }
+    
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.active { transform: translateX(0); }
+      .main-content { margin-left: 0; padding: 15px; }
+      .mobile-menu-btn { display: block; }
+      .search-box input { width: 200px; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      th, td { padding: 12px 10px; font-size: 12px; }
+      .action-btn { padding: 6px 10px; font-size: 11px; margin-right: 4px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">🛡️</div>
+        <div class="logo-text">
+          <h1>校园安全系统</h1>
+          <p>Campus Safety</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="nav-menu">
+      <a href="dashboard.html" class="nav-item">
+        <span class="nav-icon">📊</span>
+        <span class="nav-text">数据大屏</span>
+      </a>
+      <a href="danger.html" class="nav-item active">
+        <span class="nav-icon">⚠️</span>
+        <span class="nav-text">隐患管理</span>
+      </a>
+      <a href="drill.html" class="nav-item">
+        <span class="nav-icon">🏃</span>
+        <span class="nav-text">应急演练</span>
+      </a>
+      <a href="course.html" class="nav-item">
+        <span class="nav-icon">📚</span>
+        <span class="nav-text">安全学习</span>
+      </a>
+      <a href="manual.html" class="nav-item">
+        <span class="nav-icon">📖</span>
+        <span class="nav-text">应急手册</span>
+      </a>
+      <a href="notice.html" class="nav-item">
+        <span class="nav-icon">🔔</span>
+        <span class="nav-text">预警通知</span>
+      </a>
+      <a href="admin.html" class="nav-item">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-text">系统管理</span>
+      </a>
+    </div>
+    
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar">👤</div>
+        <div class="user-details">
+          <span>管理员</span>
+          <small>阳光中学</small>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="main-content">
+    <div class="header">
+      <div class="header-left">
+        <h2>隐患管理</h2>
+        <p>实时监控和处理校园安全隐患</p>
+      </div>
+      <div class="header-right">
+        <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+        <div class="search-box">
+          <input type="text" placeholder="搜索隐患位置、类型...">
+        </div>
+        <button class="add-btn" onclick="openAddModal()">➕ 添加隐患</button>
+      </div>
+    </div>
+    
+    <div class="stats-grid">
+      <div class="stat-card high">
+        <div class="stat-icon">🔴</div>
+        <div class="stat-value">5</div>
+        <div class="stat-label">高危隐患</div>
+      </div>
+      <div class="stat-card medium">
+        <div class="stat-icon">🟡</div>
+        <div class="stat-value">8</div>
+        <div class="stat-label">中危隐患</div>
+      </div>
+      <div class="stat-card low">
+        <div class="stat-icon">🔵</div>
+        <div class="stat-value">12</div>
+        <div class="stat-label">低危隐患</div>
+      </div>
+      <div class="stat-card resolved">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value">28</div>
+        <div class="stat-label">已解决</div>
+      </div>
+    </div>
+    
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="filterTable('all')">全部</button>
+      <button class="filter-btn" onclick="filterTable('high')">高危</button>
+      <button class="filter-btn" onclick="filterTable('medium')">中危</button>
+      <button class="filter-btn" onclick="filterTable('low')">低危</button>
+      <button class="filter-btn" onclick="filterTable('pending')">待处理</button>
+      <button class="filter-btn" onclick="filterTable('resolved')">已解决</button>
+    </div>
+    
+    <div class="table-container">
+      <div class="table-header">
+        <h3>隐患列表</h3>
+        <span style="font-size: 13px; color: var(--text-muted);">共 25 条记录</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>编号</th>
+            <th>位置</th>
+            <th>类型</th>
+            <th>等级</th>
+            <th>状态</th>
+            <th>发现时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="danger-table">
+          <tr data-priority="high" data-status="pending">
+            <td>D-2024-001</td>
+            <td>教学楼A栋3楼</td>
+            <td>消防通道堵塞</td>
+            <td><span class="priority-badge high">高危</span></td>
+            <td><span class="status-badge pending">待处理</span></td>
+            <td>2024-01-15 09:30</td>
+            <td>
+              <button class="action-btn detail" onclick="openDetailModal('D-2024-001')">详情</button>
+              <button class="action-btn resolve" onclick="resolveDanger('D-2024-001')">处理</button>
+            </td>
+          </tr>
+          <tr data-priority="high" data-status="pending">
+            <td>D-2024-002</td>
+            <td>宿舍楼2栋</td>
+            <td>电器线路老化</td>
+            <td><span class="priority-badge high">高危</span></td>
+            <td><span class="status-badge pending">待处理</span></td>
+            <td>2024-01-15 10:15</td>
+            <td>
+              <button class="action-btn detail" onclick="openDetailModal('D-2024-002')">详情</button>
+              <button class="action-btn resolve" onclick="resolveDanger('D-2024-002')">处理</button>
+            </td>
+          </tr>
+          <tr data-priority="medium" data-status="processing">
+            <td>D-2024-003</td>
+            <td>食堂后厨</td>
+            <td>燃气泄漏隐患</td>
+            <td><span class="priority-badge medium">中危</span></td>
+            <td><span class="status-badge processing">处理中</span></td>
+            <td>2024-01-14 16:45</td>
+            <td>
+              <button class="action-btn detail" onclick="openDetailModal('D-2024-003')">详情</button>
+              <button class="action-btn resolve" onclick="resolveDanger('D-2024-003')">完成</button>
+            </td>
+          </tr>
+          <tr data-priority="medium" data-status="processing">
+            <td>D-2024-004</td>
+            <td>图书馆</td>
+            <td>灭火器过期</td>
+            <td><span class="priority-badge medium">中危</span></td>
+            <td><span class="status-badge processing">处理中</span></td>
+            <td>2024-01-14 14:20</td>
+            <td>
+              <button class="action-btn detail" onclick="openDetailModal('D-2024-004')">详情</button>
+              <button class="action-btn resolve" onclick="resolveDanger('D-2024-004')">完成</button>
+            </td>
+          </tr>
+          <tr data-priority="low" data-status="resolved">
+            <td>D-2024-005</td>
+            <td>操场围栏</td>
+            <td>围栏破损</td>
+            <td><span class="priority-badge low">低危</span></td>
+            <td><span class="status-badge resolved">已解决</span></td>
+            <td>2024-01-10 08:30</td>
+            <td>
+              <button class="action-btn detail" onclick="openDetailModal('D-2024-005')">详情</button>
+            </td>
+          </tr>
+          <tr data-priority="low" data-status="pending">
+            <td>D-2024-006</td>
+            <td>教学楼B栋1楼</td>
+            <td>安全出口指示灯损坏</td>
+            <td><span class="priority-badge low">低危</span></td>
+            <td><span class="status-badge pending">待处理</span></td>
+            <td>2024-01-15 11:00</td>
+            <td>
+              <button class="action-btn detail" onclick="openDetailModal('D-2024-006')">详情</button>
+              <button class="action-btn resolve" onclick="resolveDanger('D-2024-006')">处理</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <div class="modal" id="add-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>➕ 添加隐患</h3>
+        <button class="close-btn" onclick="closeAddModal()">✕</button>
+      </div>
+      <form onsubmit="handleAddDanger(event)">
+        <div class="form-group">
+          <label>隐患位置</label>
+          <input type="text" id="add-location" placeholder="如：教学楼A栋3楼" required>
+        </div>
+        <div class="form-group">
+          <label>隐患类型</label>
+          <select id="add-type" required>
+            <option value="">请选择类型</option>
+            <option value="消防">消防隐患</option>
+            <option value="电气">电气隐患</option>
+            <option value="设施">设施损坏</option>
+            <option value="环境">环境安全</option>
+            <option value="其他">其他隐患</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>危险等级</label>
+            <select id="add-priority" required>
+              <option value="high">高危</option>
+              <option value="medium">中危</option>
+              <option value="low">低危</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>发现人</label>
+            <input type="text" id="add-reporter" placeholder="姓名" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>隐患描述</label>
+          <textarea id="add-description" placeholder="请详细描述隐患情况..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="modal-btn secondary" onclick="closeAddModal()">取消</button>
+          <button type="submit" class="modal-btn primary">提交</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <div class="modal" id="detail-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>📋 隐患详情</h3>
+        <button class="close-btn" onclick="closeDetailModal()">✕</button>
+      </div>
+      <div id="detail-content">
+        <div class="form-group">
+          <label>隐患编号</label>
+          <input type="text" value="D-2024-001" disabled>
+        </div>
+        <div class="form-group">
+          <label>隐患位置</label>
+          <input type="text" value="教学楼A栋3楼" disabled>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>隐患类型</label>
+            <input type="text" value="消防通道堵塞" disabled>
+          </div>
+          <div class="form-group">
+            <label>危险等级</label>
+            <input type="text" value="高危" disabled>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>发现人</label>
+            <input type="text" value="张老师" disabled>
+          </div>
+          <div class="form-group">
+            <label>发现时间</label>
+            <input type="text" value="2024-01-15 09:30" disabled>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>隐患描述</label>
+          <textarea disabled>教学楼A栋3楼东侧消防通道被杂物堵塞，严重影响紧急疏散。</textarea>
+        </div>
+        <div class="form-group">
+          <label>处理状态</label>
+          <input type="text" value="待处理" disabled>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" onclick="closeDetailModal()">关闭</button>
+        <button class="modal-btn primary" onclick="resolveDanger('D-2024-001')">立即处理</button>
+      </div>
+    </div>
+  </div>
+  
+  <script src="api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      checkLogin();
+      loadUserInfo();
+      loadDangers();
+      loadStats();
+    });
+    
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('active');
+    }
+    
+    function openAddModal() {
+      document.getElementById('add-modal').style.display = 'flex';
+    }
+    
+    function closeAddModal() {
+      document.getElementById('add-modal').style.display = 'none';
+    }
+    
+    function openDetailModal(id) {
+      document.getElementById('detail-modal').style.display = 'flex';
+      loadDangerDetail(id);
+    }
+    
+    function closeDetailModal() {
+      document.getElementById('detail-modal').style.display = 'none';
+    }
+    
+    function loadUserInfo() {
+      const user = getUserInfo();
+      if (user) {
+        document.querySelector('.user-details span').textContent = user.real_name || user.username;
+        document.querySelector('.user-details small').textContent = user.role || '用户';
+      }
+    }
+    
+    async function loadDangers(filter = 'all') {
+      try {
+        const result = await apiGet('/danger', { filter });
+        
+        if (result.success) {
+          const tbody = document.getElementById('danger-table');
+          tbody.innerHTML = '';
+          
+          result.data.forEach(danger => {
+            const priorityText = danger.priority === 'high' ? '高危' : 
+                               danger.priority === 'medium' ? '中危' : '低危';
+            const statusText = danger.status === 'pending' ? '待处理' : 
+                              danger.status === 'processing' ? '处理中' : '已解决';
+            
+            const row = document.createElement('tr');
+            row.dataset.priority = danger.priority;
+            row.dataset.status = danger.status;
+            row.innerHTML = `
+              <td>D-${danger.id}</td>
+              <td>${danger.location}</td>
+              <td>${danger.type}</td>
+              <td><span class="priority-badge ${danger.priority}">${priorityText}</span></td>
+              <td><span class="status-badge ${danger.status}">${statusText}</span></td>
+              <td>${formatDate(danger.report_time)}</td>
+              <td>
+                <button class="action-btn detail" onclick="openDetailModal(${danger.id})">详情</button>
+                ${danger.status !== 'resolved' ? 
+                  `<button class="action-btn resolve" onclick="resolveDanger(${danger.id})">${danger.status === 'processing' ? '完成' : '处理'}</button>` : ''}
+              </td>
+            `;
+            tbody.appendChild(row);
+          });
+        }
+      } catch (error) {
+        console.error('加载隐患数据失败:', error);
+      }
+    }
+    
+    async function loadStats() {
+      try {
+        const result = await apiGet('/danger/stats');
+        
+        if (result.success) {
+          document.querySelectorAll('.stat-card')[0].querySelector('.stat-value').textContent = result.data.pending;
+          document.querySelectorAll('.stat-card')[1].querySelector('.stat-value').textContent = result.data.processing;
+          document.querySelectorAll('.stat-card')[2].querySelector('.stat-value').textContent = result.data.resolved;
+        }
+      } catch (error) {
+        console.error('加载统计数据失败:', error);
+      }
+    }
+    
+    async function loadDangerDetail(id) {
+      try {
+        const result = await apiGet(`/danger/${id}`);
+        
+        if (result.success) {
+          const danger = result.data;
+          const priorityText = danger.priority === 'high' ? '高危' : 
+                             danger.priority === 'medium' ? '中危' : '低危';
+          const statusText = danger.status === 'pending' ? '待处理' : 
+                            danger.status === 'processing' ? '处理中' : '已解决';
+          
+          document.getElementById('detail-content').innerHTML = `
+            <div class="form-group">
+              <label>隐患编号</label>
+              <input type="text" value="D-${danger.id}" disabled>
+            </div>
+            <div class="form-group">
+              <label>隐患位置</label>
+              <input type="text" value="${danger.location}" disabled>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>隐患类型</label>
+                <input type="text" value="${danger.type}" disabled>
+              </div>
+              <div class="form-group">
+                <label>危险等级</label>
+                <input type="text" value="${priorityText}" disabled>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>发现人</label>
+                <input type="text" value="${danger.reporter}" disabled>
+              </div>
+              <div class="form-group">
+                <label>发现时间</label>
+                <input type="text" value="${formatDate(danger.report_time)}" disabled>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>隐患描述</label>
+              <textarea disabled>${danger.description || '暂无描述'}</textarea>
+            </div>
+            <div class="form-group">
+              <label>处理状态</label>
+              <input type="text" value="${statusText}" disabled>
+            </div>
+            ${danger.handle_time ? `
+            <div class="form-row">
+              <div class="form-group">
+                <label>处理人</label>
+                <input type="text" value="${danger.handler || '未知'}" disabled>
+              </div>
+              <div class="form-group">
+                <label>处理时间</label>
+                <input type="text" value="${formatDate(danger.handle_time)}" disabled>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>处理结果</label>
+              <textarea disabled>${danger.handle_result || '暂无处理结果'}</textarea>
+            </div>
+            ` : ''}
+          `;
+        }
+      } catch (error) {
+        console.error('加载隐患详情失败:', error);
+      }
+    }
+    
+    async function resolveDanger(id) {
+      try {
+        const result = await apiPut(`/danger/${id}`, { 
+          status: 'processing',
+          handler: getUserInfo()?.real_name || getUserInfo()?.username
+        });
+        
+        if (result.success) {
+          alert('隐患已标记为处理中！');
+          loadDangers();
+          loadStats();
+        }
+      } catch (error) {
+        console.error('处理隐患失败:', error);
+      }
+    }
+    
+    async function handleAddDanger(event) {
+      event.preventDefault();
+      
+      const location = document.getElementById('add-location').value;
+      const type = document.getElementById('add-type').value;
+      const priority = document.getElementById('add-priority').value;
+      const reporter = document.getElementById('add-reporter').value;
+      const description = document.getElementById('add-description').value;
+      
+      try {
+        const result = await apiPost('/danger', {
+          title: `${type} - ${location}`,
+          location,
+          type,
+          priority,
+          reporter,
+          description
+        });
+        
+        if (result.success) {
+          alert('隐患添加成功！');
+          closeAddModal();
+          document.querySelector('#add-modal form').reset();
+          loadDangers();
+          loadStats();
+        }
+      } catch (error) {
+        console.error('添加隐患失败:', error);
+        alert('添加隐患失败，请重试');
+      }
+    }
+    
+    function filterTable(filter) {
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      loadDangers(filter);
+    }
+    
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+    }
+    
+    document.getElementById('add-modal').addEventListener('click', function(e) {
+      if (e.target === this) closeAddModal();
+    });
+    
+    document.getElementById('detail-modal').addEventListener('click', function(e) {
+      if (e.target === this) closeDetailModal();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>安全管理系统 - 上报隐患</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    
+    .container { min-height: 100vh; background: #f5f7fa; }
+    .main-header {
+      background: linear-gradient(90deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 30px;
+      height: 60px;
+    }
+    .header-left h1 { font-size: 20px; }
+    .header-right button {
+      padding: 8px 16px;
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .wrapper { display: flex; min-height: calc(100vh - 60px); }
+    .main-sidebar {
+      width: 220px;
+      background: #1a1a2e;
+      border-right: 1px solid rgba(255,255,255,0.1);
+    }
+    .sidebar-logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 10px;
+    }
+    .logo-icon { font-size: 36px; margin-bottom: 8px; }
+    .logo-text { font-size: 14px; color: rgba(255,255,255,0.8); }
+    
+    .sidebar-menu { padding: 0 8px; }
+    .menu-item, .sub-menu-title {
+      color: rgba(255,255,255,0.8);
+      font-size: 14px;
+      height: 48px;
+      line-height: 48px;
+      margin: 4px 0;
+      border-radius: 8px;
+      padding-left: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.3s;
+    }
+    .menu-item:hover, .sub-menu-title:hover { background: rgba(255,255,255,0.1); }
+    .menu-item.active, .sub-menu-title.active {
+      background: rgba(79,172,254,0.2);
+      color: #4facfe;
+    }
+    .sub-menu-items { padding-left: 20px; }
+    .sub-menu-item {
+      color: rgba(255,255,255,0.7);
+      font-size: 13px;
+      height: 40px;
+      line-height: 40px;
+      padding-left: 30px;
+      cursor: pointer;
+      border-radius: 6px;
+      margin: 2px 0;
+    }
+    .sub-menu-item:hover { background: rgba(255,255,255,0.08); }
+    .sub-menu-item.active { background: rgba(79,172,254,0.15); color: #4facfe; }
+    
+    .main-content { flex: 1; padding: 30px; }
+    .form-card {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 30px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    
+    .form-item { margin-bottom: 20px; }
+    .form-item label {
+      display: inline-block;
+      width: 120px;
+      text-align: right;
+      margin-right: 15px;
+      font-weight: 500;
+      color: #333;
+      vertical-align: top;
+    }
+    .form-item .input-wrap {
+      display: inline-block;
+      width: calc(100% - 140px);
+    }
+    .form-item input, .form-item select, .form-item textarea {
+      width: 100%;
+      padding: 10px 15px;
+      border: 1px solid #dcdfe6;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .form-item textarea { resize: vertical; min-height: 120px; }
+    
+    .radio-group { display: flex; gap: 30px; }
+    .radio-item { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+    .radio-item input { width: auto; margin: 0; }
+    
+    .form-actions { padding-left: 135px; }
+    .btn {
+      padding: 10px 24px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-right: 15px;
+    }
+    .btn-primary { background: #409eff; color: #fff; }
+    .btn-primary:hover { background: #66b1ff; }
+    .btn-default { background: #fff; color: #606266; border: 1px solid #dcdfe6; }
+    .btn-default:hover { background: #f5f7fa; }
+    
+    .message {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      padding: 15px 20px;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 14px;
+      z-index: 9999;
+      animation: fadeIn 0.3s ease;
+    }
+    .message.warning { background: #e6a23c; }
+    .message.success { background: #67c23a; }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="main-header">
+      <div class="header-left"><h1>上报隐患</h1></div>
+      <div class="header-right">
+        <button onclick="goPage('danger.html')">返回列表</button>
+      </div>
+    </div>
+    
+    <div class="wrapper">
+      <div class="main-sidebar">
+        <div class="sidebar-logo">
+          <div class="logo-icon">🛡️</div>
+          <div class="logo-text">安全管理</div>
+        </div>
+        <div class="sidebar-menu">
+          <div class="menu-item" onclick="goPage('dashboard.html')">
+            <span>📊</span><span>数据大屏</span>
+          </div>
+          <div class="sub-menu-title active">
+            <span>⚠️</span><span>隐患管理</span><span style="margin-left:auto;">▼</span>
+          </div>
+          <div class="sub-menu-items">
+            <div class="sub-menu-item" onclick="goPage('danger.html')">隐患列表</div>
+            <div class="sub-menu-item active" onclick="goPage('danger_add.html')">上报隐患</div>
+          </div>
+          <div class="menu-item" onclick="goPage('drill.html')">
+            <span>🚒</span><span>应急演练</span>
+          </div>
+          <div class="menu-item" onclick="goPage('notice.html')">
+            <span>🔔</span><span>预警通知</span>
+          </div>
+          <div class="menu-item" onclick="goPage('course.html')">
+            <span>📚</span><span>安全学习</span>
+          </div>
+          <div class="menu-item" onclick="goPage('manual.html')">
+            <span>📖</span><span>应急手册</span>
+          </div>
+          <div class="menu-item" onclick="goPage('admin.html')">
+            <span>⚙️</span><span>系统管理</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="main-content">
+        <div class="form-card">
+          <div class="form-item">
+            <label>隐患名称</label>
+            <div class="input-wrap">
+              <input type="text" id="name" placeholder="请输入隐患名称">
+            </div>
+          </div>
+          
+          <div class="form-item">
+            <label>隐患位置</label>
+            <div class="input-wrap">
+              <input type="text" id="location" placeholder="请输入隐患位置">
+            </div>
+          </div>
+          
+          <div class="form-item">
+            <label>隐患等级</label>
+            <div class="input-wrap">
+              <div class="radio-group">
+                <label class="radio-item">
+                  <input type="radio" name="level" value="high" checked>高
+                </label>
+                <label class="radio-item">
+                  <input type="radio" name="level" value="medium">中
+                </label>
+                <label class="radio-item">
+                  <input type="radio" name="level" value="low">低
+                </label>
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-item">
+            <label>隐患类型</label>
+            <div class="input-wrap">
+              <select id="type">
+                <option value="fire">消防安全</option>
+                <option value="electric">电气安全</option>
+                <option value="structure">结构安全</option>
+                <option value="traffic">交通安全</option>
+                <option value="other">其他</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-item">
+            <label>隐患描述</label>
+            <div class="input-wrap">
+              <textarea id="desc" placeholder="请详细描述隐患情况"></textarea>
+            </div>
+          </div>
+          
+          <div class="form-item">
+            <label>上报人</label>
+            <div class="input-wrap">
+              <input type="text" id="reporter" placeholder="请输入上报人姓名">
+            </div>
+          </div>
+          
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="submitForm()">提交上报</button>
+            <button class="btn btn-default" onclick="resetForm()">重置</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      checkLogin();
+    });
+
+    function goPage(page) {
+      window.location.href = page;
+    }
+
+    function showMessage(text, type) {
+      const message = document.createElement('div');
+      message.className = 'message ' + type;
+      message.textContent = text;
+      document.body.appendChild(message);
+      setTimeout(() => message.remove(), 3000);
+    }
+
+    async function submitForm() {
+      const name = document.getElementById('name').value;
+      const location = document.getElementById('location').value;
+      const level = document.querySelector('input[name="level"]:checked').value;
+      const type = document.getElementById('type').value;
+      const desc = document.getElementById('desc').value;
+      const reporter = document.getElementById('reporter').value;
+      
+      if (!name.trim()) {
+        showMessage('请输入隐患名称', 'warning');
+        return;
+      }
+      if (!location.trim()) {
+        showMessage('请输入隐患位置', 'warning');
+        return;
+      }
+      
+      try {
+        const result = await apiPost('/danger', {
+          name,
+          location,
+          priority: level,
+          type,
+          description: desc,
+          reporter
+        });
+        
+        if (result.success) {
+          showMessage('隐患上报成功', 'success');
+          setTimeout(() => {
+            window.location.href = 'danger.html';
+          }, 1500);
+        } else {
+          showMessage(result.error || '上报失败', 'warning');
+        }
+      } catch (error) {
+        showMessage('网络连接失败，请稍后重试', 'warning');
+      }
+    }
+
+    function resetForm() {
+      document.getElementById('name').value = '';
+      document.getElementById('location').value = '';
+      document.querySelector('input[name="level"][value="high"]').checked = true;
+      document.getElementById('type').value = 'fire';
+      document.getElementById('desc').value = '';
+      document.getElementById('reporter').value = '';
+    }
+  </script>
+</body>
+</html>

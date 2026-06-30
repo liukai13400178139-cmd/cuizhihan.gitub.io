@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>校园安全系统 - 系统管理</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --primary: #4facfe;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --bg-dark: #0a0e17;
+      --bg-card: rgba(255,255,255,0.05);
+      --border-color: rgba(255,255,255,0.1);
+      --text-primary: #fff;
+      --text-secondary: rgba(255,255,255,0.6);
+      --text-muted: rgba(255,255,255,0.4);
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    .sidebar {
+      position: fixed;
+      left: 0; top: 0; bottom: 0;
+      width: 260px;
+      background: rgba(20, 28, 47, 0.95);
+      backdrop-filter: blur(20px);
+      border-right: 1px solid var(--border-color);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 0;
+      transition: transform 0.3s;
+    }
+    
+    .sidebar-header {
+      padding: 0 20px 25px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 20px;
+    }
+    
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon {
+      width: 42px; height: 42px;
+      background: linear-gradient(135deg, var(--primary), #2563eb);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+    .logo-text h1 { font-size: 18px; font-weight: 600; }
+    .logo-text p { font-size: 12px; color: var(--text-muted); }
+    
+    .nav-menu { flex: 1; padding: 0 15px; overflow-y: auto; }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px; border-radius: 12px; margin-bottom: 6px;
+      cursor: pointer; transition: all 0.3s; color: var(--text-secondary);
+      text-decoration: none;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+    .nav-item.active { background: rgba(79,172,254,0.15); color: var(--primary); }
+    .nav-icon { font-size: 20px; }
+    .nav-text { font-size: 14px; font-weight: 500; }
+    
+    .sidebar-footer {
+      padding: 15px; border-top: 1px solid var(--border-color);
+    }
+    .user-info {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px; background: rgba(255,255,255,0.03); border-radius: 12px;
+    }
+    .user-avatar {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .user-details span { display: block; font-size: 14px; font-weight: 500; }
+    .user-details small { font-size: 12px; color: var(--text-muted); }
+    
+    .main-content { margin-left: 260px; padding: 25px; min-height: 100vh; }
+    
+    .header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 25px; flex-wrap: wrap; gap: 15px;
+    }
+    
+    .header-left h2 { font-size: 24px; font-weight: 600; }
+    .header-left p { font-size: 13px; color: var(--text-muted); margin-top: 5px; }
+    
+    .header-right { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+    
+    .mobile-menu-btn {
+      display: none; padding: 10px; background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border-color); border-radius: 8px;
+      color: var(--text-primary); font-size: 20px; cursor: pointer;
+    }
+    
+    .add-btn {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 24px; background: var(--primary);
+      border: none; border-radius: 10px; color: #fff;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      transition: all 0.3s;
+    }
+    .add-btn:hover { background: #3b82f6; transform: translateY(-2px); }
+    
+    .tabs {
+      display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap;
+    }
+    
+    .tab {
+      padding: 10px 20px; border-radius: 10px; font-size: 14px;
+      font-weight: 500; cursor: pointer; transition: all 0.3s;
+      background: rgba(255,255,255,0.05); border: 1px solid transparent;
+      color: var(--text-secondary);
+    }
+    
+    .tab.active { background: rgba(79,172,254,0.15); color: var(--primary); border-color: var(--primary); }
+    .tab:hover { background: rgba(255,255,255,0.08); }
+    
+    .section-content {
+      display: none;
+    }
+    
+    .section-content.active {
+      display: block;
+    }
+    
+    .card {
+      background: var(--bg-card); border-radius: 16px; padding: 25px;
+      border: 1px solid var(--border-color); margin-bottom: 25px;
+    }
+    
+    .card-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px; flex-wrap: wrap; gap: 15px;
+    }
+    
+    .card-header h3 { font-size: 16px; font-weight: 600; }
+    
+    .table-wrapper {
+      overflow-x: auto;
+    }
+    
+    table {
+      width: 100%; border-collapse: collapse;
+    }
+    
+    th, td {
+      padding: 14px; text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    th { font-size: 13px; font-weight: 600; color: var(--text-muted); }
+    td { font-size: 14px; color: var(--text-secondary); }
+    
+    tr:hover { background: rgba(255,255,255,0.03); }
+    
+    .action-btns {
+      display: flex; gap: 8px;
+    }
+    
+    .action-btn {
+      padding: 6px 12px; border-radius: 6px; font-size: 12px;
+      font-weight: 500; cursor: pointer; transition: all 0.3s;
+      border: none;
+    }
+    
+    .action-btn.edit { background: rgba(79,172,254,0.15); color: var(--primary); }
+    .action-btn.edit:hover { background: rgba(79,172,254,0.25); }
+    .action-btn.delete { background: rgba(239,68,68,0.15); color: var(--danger); }
+    .action-btn.delete:hover { background: rgba(239,68,68,0.25); }
+    
+    .form-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    
+    .form-group { margin-bottom: 20px; }
+    
+    .form-group label {
+      display: block; font-size: 13px; color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+    
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 12px; background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border-color); border-radius: 10px;
+      color: var(--text-primary); font-size: 14px;
+      outline: none; transition: all 0.3s;
+    }
+    
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: var(--primary);
+    }
+    
+    .form-group textarea { resize: vertical; min-height: 100px; }
+    
+    .form-actions {
+      display: flex; gap: 12px; margin-top: 25px;
+    }
+    
+    .form-btn {
+      flex: 1; padding: 14px; border-radius: 12px; font-size: 14px;
+      font-weight: 600; cursor: pointer; transition: all 0.3s; border: none;
+    }
+    
+    .form-btn.primary { background: var(--primary); color: #fff; }
+    .form-btn.primary:hover { background: #3b82f6; }
+    .form-btn.secondary { background: rgba(255,255,255,0.05); color: var(--text-secondary); border: 1px solid var(--border-color); }
+    .form-btn.secondary:hover { background: rgba(255,255,255,0.08); }
+    
+    .system-info {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 15px;
+    }
+    
+    .info-item {
+      background: rgba(255,255,255,0.03); border-radius: 12px; padding: 20px;
+      text-align: center;
+    }
+    
+    .info-item .icon { font-size: 24px; margin-bottom: 10px; }
+    .info-item .value { font-size: 20px; font-weight: 700; margin-bottom: 5px; }
+    .info-item .label { font-size: 12px; color: var(--text-muted); }
+    
+    .setting-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    .setting-item:last-child { border-bottom: none; }
+    
+    .setting-item .label { font-size: 14px; }
+    .setting-item .desc { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+    
+    .toggle {
+      width: 50px; height: 28px; border-radius: 14px;
+      background: rgba(255,255,255,0.1); position: relative;
+      cursor: pointer; transition: all 0.3s;
+    }
+    
+    .toggle.active { background: var(--primary); }
+    
+    .toggle::after {
+      content: ''; position: absolute; top: 4px; left: 4px;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: #fff; transition: all 0.3s;
+    }
+    
+    .toggle.active::after { left: 26px; }
+    
+    .modal {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 1000;
+      align-items: center; justify-content: center; padding: 20px;
+      animation: fadeIn 0.3s;
+    }
+    
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    
+    .modal-content {
+      background: rgba(20,28,47,0.95); border-radius: 20px; padding: 30px;
+      max-width: 500px; width: 100%; border: 1px solid var(--border-color);
+      animation: slideUp 0.3s;
+    }
+    
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 25px;
+    }
+    
+    .modal-header h3 { font-size: 20px; font-weight: 600; }
+    
+    .close-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 1px solid var(--border-color); background: rgba(255,255,255,0.05);
+      color: var(--text-secondary); font-size: 18px; cursor: pointer;
+      transition: all 0.3s;
+    }
+    .close-btn:hover { background: rgba(239,68,68,0.15); color: var(--danger); border-color: var(--danger); }
+    
+    .modal-actions {
+      display: flex; gap: 12px; margin-top: 25px;
+    }
+    
+    .modal-btn {
+      flex: 1; padding: 14px; border-radius: 12px; font-size: 14px;
+      font-weight: 600; cursor: pointer; transition: all 0.3s; border: none;
+    }
+    
+    .modal-btn.primary { background: var(--primary); color: #fff; }
+    .modal-btn.primary:hover { background: #3b82f6; }
+    .modal-btn.secondary { background: rgba(255,255,255,0.05); color: var(--text-secondary); border: 1px solid var(--border-color); }
+    .modal-btn.secondary:hover { background: rgba(255,255,255,0.08); }
+    
+    .modal-btn.danger { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+    .modal-btn.danger:hover { background: rgba(239,68,68,0.25); }
+    
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.active { transform: translateX(0); }
+      .main-content { margin-left: 0; padding: 15px; }
+      .mobile-menu-btn { display: block; }
+      .form-grid { grid-template-columns: 1fr; }
+      .system-info { grid-template-columns: repeat(2, 1fr); }
+      .table-wrapper { overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">🛡️</div>
+        <div class="logo-text">
+          <h1>校园安全系统</h1>
+          <p>Campus Safety</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="nav-menu">
+      <a href="dashboard.html" class="nav-item">
+        <span class="nav-icon">📊</span>
+        <span class="nav-text">数据大屏</span>
+      </a>
+      <a href="danger.html" class="nav-item">
+        <span class="nav-icon">⚠️</span>
+        <span class="nav-text">隐患管理</span>
+      </a>
+      <a href="drill.html" class="nav-item">
+        <span class="nav-icon">🏃</span>
+        <span class="nav-text">应急演练</span>
+      </a>
+      <a href="course.html" class="nav-item">
+        <span class="nav-icon">📚</span>
+        <span class="nav-text">安全学习</span>
+      </a>
+      <a href="manual.html" class="nav-item">
+        <span class="nav-icon">📖</span>
+        <span class="nav-text">应急手册</span>
+      </a>
+      <a href="notice.html" class="nav-item">
+        <span class="nav-icon">🔔</span>
+        <span class="nav-text">预警通知</span>
+      </a>
+      <a href="admin.html" class="nav-item active">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-text">系统管理</span>
+      </a>
+    </div>
+    
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar">👤</div>
+        <div class="user-details">
+          <span>管理员</span>
+          <small>阳光中学</small>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="main-content">
+    <div class="header">
+      <div class="header-left">
+        <h2>系统管理</h2>
+        <p>管理系统用户、权限和配置</p>
+      </div>
+      <div class="header-right">
+        <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+      </div>
+    </div>
+    
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('users')">👥 用户管理</button>
+      <button class="tab" onclick="switchTab('roles')">🔐 角色权限</button>
+      <button class="tab" onclick="switchTab('system')">⚙️ 系统设置</button>
+      <button class="tab" onclick="switchTab('logs')">📋 操作日志</button>
+    </div>
+    
+    <div id="users" class="section-content active">
+      <div class="card">
+        <div class="card-header">
+          <h3>用户列表</h3>
+          <button class="add-btn" onclick="openAddUserModal()">➕ 添加用户</button>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>用户名</th>
+                <th>姓名</th>
+                <th>角色</th>
+                <th>状态</th>
+                <th>创建时间</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>admin</td>
+                <td>管理员</td>
+                <td><span style="background:rgba(79,172,254,0.15);color:var(--primary);padding:4px 10px;border-radius:6px;font-size:12px">超级管理员</span></td>
+                <td><span style="color:var(--success)">✅ 启用</span></td>
+                <td>2024-01-01</td>
+                <td>
+                  <div class="action-btns">
+                    <button class="action-btn edit" onclick="openEditUserModal()">编辑</button>
+                    <button class="action-btn delete" onclick="openDeleteModal()">删除</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>teacher01</td>
+                <td>张老师</td>
+                <td><span style="background:rgba(34,197,94,0.15);color:var(--success);padding:4px 10px;border-radius:6px;font-size:12px">教师</span></td>
+                <td><span style="color:var(--success)">✅ 启用</span></td>
+                <td>2024-01-05</td>
+                <td>
+                  <div class="action-btns">
+                    <button class="action-btn edit" onclick="openEditUserModal()">编辑</button>
+                    <button class="action-btn delete" onclick="openDeleteModal()">删除</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>student01</td>
+                <td>李明</td>
+                <td><span style="background:rgba(245,158,11,0.15);color:var(--warning);padding:4px 10px;border-radius:6px;font-size:12px">学生</span></td>
+                <td><span style="color:var(--success)">✅ 启用</span></td>
+                <td>2024-01-10</td>
+                <td>
+                  <div class="action-btns">
+                    <button class="action-btn edit" onclick="openEditUserModal()">编辑</button>
+                    <button class="action-btn delete" onclick="openDeleteModal()">删除</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <div id="roles" class="section-content">
+      <div class="card">
+        <div class="card-header">
+          <h3>角色列表</h3>
+          <button class="add-btn" onclick="openAddRoleModal()">➕ 添加角色</button>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>角色名称</th>
+                <th>描述</th>
+                <th>权限数量</th>
+                <th>用户数量</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>超级管理员</td>
+                <td>系统最高权限</td>
+                <td>12</td>
+                <td>1</td>
+                <td>
+                  <div class="action-btns">
+                    <button class="action-btn edit" onclick="openEditRoleModal()">编辑</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>教师</td>
+                <td>可查看和管理班级安全信息</td>
+                <td>8</td>
+                <td>25</td>
+                <td>
+                  <div class="action-btns">
+                    <button class="action-btn edit" onclick="openEditRoleModal()">编辑</button>
+                    <button class="action-btn delete" onclick="openDeleteModal()">删除</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>学生</td>
+                <td>可查看安全知识和学习课程</td>
+                <td>4</td>
+                <td>500</td>
+                <td>
+                  <div class="action-btns">
+                    <button class="action-btn edit" onclick="openEditRoleModal()">编辑</button>
+                    <button class="action-btn delete" onclick="openDeleteModal()">删除</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <div id="system" class="section-content">
+      <div class="card">
+        <h3 style="font-size:16px;font-weight:600;margin-bottom:20px">📊 系统信息</h3>
+        <div class="system-info">
+          <div class="info-item">
+            <div class="icon">🏷️</div>
+            <div class="value">v1.0.0</div>
+            <div class="label">系统版本</div>
+          </div>
+          <div class="info-item">
+            <div class="icon">📅</div>
+            <div class="value">2024-01-15</div>
+            <div class="label">最后更新</div>
+          </div>
+          <div class="info-item">
+            <div class="icon">👥</div>
+            <div class="value">526</div>
+            <div class="label">注册用户</div>
+          </div>
+          <div class="info-item">
+            <div class="icon">📁</div>
+            <div class="value">2.3 GB</div>
+            <div class="label">数据存储</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <h3 style="font-size:16px;font-weight:600;margin-bottom:20px">🔔 通知设置</h3>
+        <div class="setting-item">
+          <div>
+            <div class="label">邮件通知</div>
+            <div class="desc">发送预警通知到用户邮箱</div>
+          </div>
+          <div class="toggle active" onclick="toggleSetting(this)"></div>
+        </div>
+        <div class="setting-item">
+          <div>
+            <div class="label">短信通知</div>
+            <div class="desc">发送紧急预警到用户手机</div>
+          </div>
+          <div class="toggle" onclick="toggleSetting(this)"></div>
+        </div>
+        <div class="setting-item">
+          <div>
+            <div class="label">系统公告</div>
+            <div class="desc">在系统首页显示公告信息</div>
+          </div>
+          <div class="toggle active" onclick="toggleSetting(this)"></div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <h3 style="font-size:16px;font-weight:600;margin-bottom:20px">🔒 安全设置</h3>
+        <div class="setting-item">
+          <div>
+            <div class="label">登录验证码</div>
+            <div class="desc">登录时需要输入验证码</div>
+          </div>
+          <div class="toggle active" onclick="toggleSetting(this)"></div>
+        </div>
+        <div class="setting-item">
+          <div>
+            <div class="label">密码有效期</div>
+            <div class="desc">密码过期提醒和强制修改</div>
+          </div>
+          <div class="toggle" onclick="toggleSetting(this)"></div>
+        </div>
+        <div class="setting-item">
+          <div>
+            <div class="label">登录日志</div>
+            <div class="desc">记录所有登录行为</div>
+          </div>
+          <div class="toggle active" onclick="toggleSetting(this)"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="logs" class="section-content">
+      <div class="card">
+        <div class="card-header">
+          <h3>操作日志</h3>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>时间</th>
+                <th>用户</th>
+                <th>操作</th>
+                <th>模块</th>
+                <th>状态</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>2024-01-15 14:30:25</td>
+                <td>admin</td>
+                <td>发布预警通知</td>
+                <td>预警通知</td>
+                <td><span style="color:var(--success)">成功</span></td>
+              </tr>
+              <tr>
+                <td>2024-01-15 13:20:10</td>
+                <td>teacher01</td>
+                <td>添加隐患记录</td>
+                <td>隐患管理</td>
+                <td><span style="color:var(--success)">成功</span></td>
+              </tr>
+              <tr>
+                <td>2024-01-15 11:15:45</td>
+                <td>admin</td>
+                <td>系统登录</td>
+                <td>系统管理</td>
+                <td><span style="color:var(--success)">成功</span></td>
+              </tr>
+              <tr>
+                <td>2024-01-14 16:45:30</td>
+                <td>teacher01</td>
+                <td>修改演练计划</td>
+                <td>应急演练</td>
+                <td><span style="color:var(--success)">成功</span></td>
+              </tr>
+              <tr>
+                <td>2024-01-14 09:30:00</td>
+                <td>admin</td>
+                <td>系统设置更新</td>
+                <td>系统管理</td>
+                <td><span style="color:var(--success)">成功</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="modal" id="add-user-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>👤 添加用户</h3>
+        <button class="close-btn" onclick="closeModal('add-user-modal')">✕</button>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>用户名</label>
+          <input type="text" placeholder="请输入用户名">
+        </div>
+        <div class="form-group">
+          <label>姓名</label>
+          <input type="text" placeholder="请输入姓名">
+        </div>
+        <div class="form-group">
+          <label>密码</label>
+          <input type="password" placeholder="请输入密码">
+        </div>
+        <div class="form-group">
+          <label>角色</label>
+          <select>
+            <option value="admin">超级管理员</option>
+            <option value="teacher">教师</option>
+            <option value="student">学生</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" onclick="closeModal('add-user-modal')">取消</button>
+        <button class="modal-btn primary">添加用户</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="modal" id="edit-user-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>👤 编辑用户</h3>
+        <button class="close-btn" onclick="closeModal('edit-user-modal')">✕</button>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>用户名</label>
+          <input type="text" value="admin" readonly>
+        </div>
+        <div class="form-group">
+          <label>姓名</label>
+          <input type="text" value="管理员">
+        </div>
+        <div class="form-group">
+          <label>新密码</label>
+          <input type="password" placeholder="留空则不修改">
+        </div>
+        <div class="form-group">
+          <label>角色</label>
+          <select>
+            <option value="admin" selected>超级管理员</option>
+            <option value="teacher">教师</option>
+            <option value="student">学生</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" onclick="closeModal('edit-user-modal')">取消</button>
+        <button class="modal-btn primary">保存修改</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="modal" id="delete-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>⚠️ 确认删除</h3>
+        <button class="close-btn" onclick="closeModal('delete-modal')">✕</button>
+      </div>
+      <p style="font-size:14px;color:var(--text-secondary);margin-bottom:25px">确定要删除该记录吗？此操作不可撤销。</p>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" onclick="closeModal('delete-modal')">取消</button>
+        <button class="modal-btn danger">确认删除</button>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('active');
+    }
+    
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      
+      document.querySelectorAll('.section-content').forEach(s => s.classList.remove('active'));
+      document.getElementById(tabName).classList.add('active');
+    }
+    
+    function openAddUserModal() {
+      document.getElementById('add-user-modal').style.display = 'flex';
+    }
+    
+    function openEditUserModal() {
+      document.getElementById('edit-user-modal').style.display = 'flex';
+    }
+    
+    function openDeleteModal() {
+      document.getElementById('delete-modal').style.display = 'flex';
+    }
+    
+    function openAddRoleModal() {
+      alert('添加角色功能开发中');
+    }
+    
+    function openEditRoleModal() {
+      alert('编辑角色功能开发中');
+    }
+    
+    function closeModal(modalId) {
+      document.getElementById(modalId).style.display = 'none';
+    }
+    
+    function toggleSetting(toggle) {
+      toggle.classList.toggle('active');
+    }
+    
+    document.querySelectorAll('.modal').forEach(modal => {
+      modal.addEventListener('click', function(e) {
+        if (e.target === this) {
+          this.style.display = 'none';
+        }
+      });
+    });
+  </script>
+</body>
+</html>
